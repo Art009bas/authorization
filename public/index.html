@@ -3,1847 +3,377 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Отчёт бухам - Учёт средств запаса</title>
+    <title>Авторизация</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+        .auth-container {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
         }
-        
-        @keyframes slideIn {
-            from { transform: translateX(20px); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
+        .input-field:focus {
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.3);
         }
-        
-        .fade-in {
-            animation: fadeIn 0.3s ease-out forwards;
+        .toggle-btn.active {
+            background-color: #6366f1;
+            color: white;
         }
-        
-        .slide-in {
-            animation: slideIn 0.3s ease-out forwards;
-        }
-        
-        .file-input-label {
+        .social-btn {
             transition: all 0.3s ease;
         }
-        
-        .file-input-label:hover {
+        .social-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
-        
-        .file-preview-image {
-            max-height: 150px;
-            object-fit: contain;
+        .telegram-btn {
+            background-color: #0088cc;
         }
-        
-        .payment-method-btn, .status-btn {
-            transition: all 0.2s ease;
+        .yandex-btn {
+            background-color: #FF0000;
         }
-        
-        .payment-method-btn.active, .status-btn.active {
-            background-color: #3b82f6;
-            color: white;
-            border-color: #3b82f6;
-        }
-        
-        .amount-input:focus + .currency-label {
-            border-color: #3b82f6;
-        }
-        
-        .status-badge {
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-        
-        .status-badge:hover {
-            transform: scale(1.05);
-        }
-        
-        .collapsible-content {
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.3s ease-out;
-        }
-        
-        .collapsible-content.expanded {
-            max-height: 1000px; /* Достаточно большое значение для анимации */
-        }
-        
-        .reserve-balance {
-            background: linear-gradient(45deg, #4f46e5, #8b5cf6);
-            color: white;
-            border-radius: 0.75rem;
-            box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.2);
-        }
-        
-        @media (max-width: 640px) {
-            .form-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .submit-btn {
-                width: 100%;
-            }
+        .form-switch {
+            transition: all 0.4s ease;
         }
     </style>
 </head>
-<body class="bg-gray-50 min-h-screen">
-    <div class="container mx-auto px-4 py-8 max-w-4xl">
-        <!-- Шапка приложения -->
-        <header class="mb-6">
-            <div class="flex justify-between items-center">
-                <h1 class="text-2xl md:text-3xl font-bold text-gray-800">
-                    <i class="fas fa-file-invoice-dollar text-blue-500 mr-3"></i>
-                    Отчёт бухам
-                </h1>
-            </div>
-           <p class="text-gray-500 mt-2">Учёт заказанных средств и форм оплаты. (перейти в&nbsp;<a href="https://art009bas.github.io/reestr/" class="text-blue-500 hover:underline">Планер</a>)</p>
-        </header>
-        
-        <!-- Основной контент -->
-        <main>
-            <!-- Форма добавления отчёта -->
-            <div class="bg-white rounded-xl shadow-md overflow-hidden mb-8 fade-in">
-                <div class="p-6 border-b border-gray-200 flex justify-between items-center cursor-pointer" id="new-report-header">
-                    <h2 class="text-xl font-semibold text-gray-800">
-                        <i class="fas fa-plus-circle text-blue-500 mr-3"></i>
-                        Новый отчёт
-                    </h2>
-                    <i class="fas fa-chevron-down text-gray-400 transition-transform duration-300" id="new-report-chevron"></i>
-                </div>
-                
-                <div class="collapsible-content" id="new-report-content">
-                    <div class="p-6">
-                        <form id="report-form">
-                            <!-- Сетка для полей формы -->
-                            <div class="grid form-grid gap-4 md:grid-cols-2">
-                                <!-- Сумма -->
-                                <div class="mb-4">
-                                    <label class="block text-gray-700 mb-2">Сумма</label>
-                                    <div class="relative">
-                                        <input type="number" id="amount" min="0" step="0.01" 
-                                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent amount-input"
-                                               placeholder="0.00" required>
-                                        <span class="currency-label absolute right-3 top-2 text-gray-500">₽</span>
-                                    </div>
-                                </div>
-                                
-                                <!-- Дата -->
-                                <div class="mb-4">
-                                    <label class="block text-gray-700 mb-2">Дата</label>
-                                    <input type="date" id="date" 
-                                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                           required>
-                                </div>
-                                
-                                <!-- Тип оплаты -->
-                                <div class="mb-4 md:col-span-2">
-                                    <label class="block text-gray-700 mb-2">Форма оплаты</label>
-                                    <div class="grid grid-cols-2 gap-2 w-full">
-                                        <button type="button" class="payment-method-btn active px-4 py-2 border border-gray-300 rounded-lg" data-method="cash">
-                                            <i class="fas fa-money-bill-wave mr-2"></i> Нал
-                                        </button>
-                                        <button type="button" class="payment-method-btn px-4 py-2 border border-gray-300 rounded-lg" data-method="invoice">
-                                            <i class="fas fa-file-invoice mr-2"></i> Счёт
-                                        </button>
-                                    </div>
-                                    <input type="hidden" id="payment-method" value="cash" required>
-                                </div>
-                                
-                               <!-- Оплачено своими средствами -->
-<div class="mb-4 md:col-span-2">
-    <label class="flex items-center space-x-2">
-        <input type="checkbox" id="self-paid" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
-        <span class="text-gray-700">Оплачено собственными средствами</span>
-    </label>
-</div>
-
-<!-- Оплачено средствами запаса -->
-<div class="mb-4 md:col-span-2" id="use-reserve-container">
-    <label class="flex items-center space-x-2">
-        <input type="checkbox" id="use-reserve" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
-        <span class="text-gray-700">Оплата средствами запаса</span>
-    </label>
-</div>
-                                
-                                <!-- Комментарий -->
-                                <div class="mb-4 md:col-span-2">
-                                    <label class="block text-gray-700 mb-2">Комментарий</label>
-                                    <textarea id="comment" rows="3"
-                                              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                              placeholder="На что были потрачены средства"></textarea>
-                                </div>
-                                
-                                <!-- Загрузка файла -->
-                                <div class="mb-4 md:col-span-2">
-                                    <label class="block text-gray-700 mb-2">Документ (чек, счёт)</label>
-                                    <label for="file-upload" class="file-input-label flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
-                                        <div class="flex flex-col items-center justify-center pt-5 pb-6">
-                                            <i class="fas fa-cloud-upload-alt text-3xl text-gray-400 mb-2"></i>
-                                            <p class="mb-2 text-sm text-gray-500">
-                                                <span class="font-semibold">Нажмите для загрузки</span> или перетащите файл
-                                            </p>
-                                            <p class="text-xs text-gray-500">PNG, JPG, PDF (до 5MB)</p>
-                                        </div>
-                                        <input id="file-upload" type="file" class="hidden" accept="image/*,.pdf">
-                                    </label>
-                                    <div id="file-preview" class="mt-2 hidden">
-                                        <div class="flex items-center justify-between bg-gray-100 p-2 rounded-lg">
-                                            <div class="flex items-center">
-                                                <i class="fas fa-file-image text-blue-500 mr-2 text-xl"></i>
-                                                <div>
-                                                    <p id="file-name" class="text-sm font-medium text-gray-700"></p>
-                                                    <p id="file-size" class="text-xs text-gray-500"></p>
-                                                </div>
-                                            </div>
-                                            <button type="button" id="remove-file" class="text-red-500 hover:text-red-700">
-                                                <i class="fas fa-times"></i>
-                                            </button>
-                                        </div>
-                                        <img id="file-preview-image" class="file-preview-image mt-2 rounded-lg hidden">
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <!-- Кнопка отправки -->
-                            <div class="flex justify-end mt-6">
-                                <button type="submit" class="submit-btn px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 flex items-center">
-                                    <i class="fas fa-save mr-2"></i> Сохранить отчёт
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
+<body class="min-h-screen flex items-center justify-center p-4">
+    <div class="auth-container rounded-xl shadow-2xl overflow-hidden w-full max-w-md">
+        <div class="p-8 bg-white">
+            <!-- Переключатель между входом и регистрацией -->
+            <div class="flex rounded-lg p-1 bg-gray-100 mb-6">
+                <button id="login-toggle" class="toggle-btn flex-1 py-2 rounded-lg font-medium active">Вход</button>
+                <button id="register-toggle" class="toggle-btn flex-1 py-2 rounded-lg font-medium">Регистрация</button>
             </div>
             
-            <!-- Журнал отчётов -->
-            <div class="bg-white rounded-xl shadow-md overflow-hidden fade-in">
-                <div class="p-6 border-b border-gray-200 flex justify-between items-center">
-                    <h2 class="text-xl font-semibold text-gray-800">
-                        <i class="fas fa-book text-blue-500 mr-3"></i>
-                        Журнал отчётов
-                    </h2>
-                    <div class="flex items-center space-x-2">
-                        <div class="relative">
-                            <select id="report-filter" class="appearance-none pl-3 pr-8 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
-                                <option value="all">Все</option>
-                                <option value="cash">Нал</option>
-                                <option value="invoice">Счёт</option>
-                            </select>
-                            <div class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-                                <i class="fas fa-chevron-down text-gray-400"></i>
-                            </div>
-                        </div>
-                        <div class="relative">
-                            <select id="status-filter" class="appearance-none pl-3 pr-8 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
-                                <option value="all">Все статусы</option>
-                                <option value="not_ordered">Не заказано</option>
-                                <option value="ordered">Заказано</option>
-                                <option value="paid">Оплачено</option>
-                            </select>
-                            <div class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-                                <i class="fas fa-chevron-down text-gray-400"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+            <!-- Форма входа -->
+            <div id="login-form" class="form-switch">
+                <h1 class="text-2xl font-bold text-gray-800 mb-6">Войдите в аккаунт</h1>
                 
-                <div class="p-4">
-                    <div id="reports-list" class="space-y-3">
-                        <!-- Здесь будут отображаться отчёты -->
-                        <div class="text-center py-8 text-gray-400">
-                            <i class="fas fa-inbox text-4xl mb-3"></i>
-                            <p>Нет отчётов</p>
-                        </div>
-                    </div>
-                    
-                    <!-- Пагинация -->
-                    <div class="flex justify-between items-center mt-6 px-2">
-                        <button id="prev-page" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 disabled:opacity-50" disabled>
-                            <i class="fas fa-chevron-left mr-2"></i> Назад
-                        </button>
-                        <span id="page-info" class="text-sm text-gray-600">Страница 1 из 1</span>
-                        <button id="next-page" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 disabled:opacity-50" disabled>
-                            Вперед <i class="fas fa-chevron-right ml-2"></i>
-                        </button>
-                    </div>
-                </div>
-            </div>
-            
-            
-            
-            <!-- Статистика -->
-            <div class="bg-white rounded-xl shadow-md overflow-hidden mt-8 fade-in">
-                <div class="p-6 border-b border-gray-200">
-                    <h2 class="text-xl font-semibold text-gray-800">
-                        <i class="fas fa-chart-pie text-blue-500 mr-3"></i>
-                        Статистика расходов
-                    </h2>
-                </div>
-                
-                <div class="p-6">
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                        <div class="bg-blue-50 p-4 rounded-lg">
-                            <div id="total-amount" class="text-2xl font-bold text-blue-600">0 ₽</div>
-                            <div class="text-gray-600 text-sm">Всего потрачено</div>
-                        </div>
-                        <div class="bg-green-50 p-4 rounded-lg">
-                            <div id="monthly-amount" class="text-2xl font-bold text-green-600">0 ₽</div>
-                            <div class="text-gray-600 text-sm">За месяц</div>
-                        </div>
-                        <div class="bg-purple-50 p-4 rounded-lg">
-                            <div id="self-paid-amount" class="text-2xl font-bold text-purple-600">0 ₽</div>
-                            <div class="text-gray-600 text-sm">Использование своих</div>
-                        </div>
-                        <div class="bg-red-50 p-4 rounded-lg">
-                            <div id="unpaid-self-amount" class="text-2xl font-bold text-red-600">0 ₽</div>
-                            <div class="text-gray-600 text-sm">Свои неоплаченные</div>
-                        </div>
-                    </div>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div class="bg-gray-50 p-4 rounded-lg">
-                            <h3 class="text-md font-medium text-gray-700 mb-3">Распределение по месяцам</h3>
-                            <div id="monthly-chart" class="flex items-end h-40 space-x-2">
-                                <!-- График будет сгенерирован динамически -->
-                            </div>
-                        </div>
-                        <div class="bg-gray-50 p-4 rounded-lg">
-                            <h3 class="text-md font-medium text-gray-700 mb-3">По формам оплаты</h3>
-                            <div class="flex items-center justify-between mb-2">
-                                <div class="flex items-center">
-                                    <div class="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
-                                    <span class="text-sm">Наличные</span>
-                                </div>
-                                <span id="cash-percent" class="text-sm font-medium">0%</span>
-                            </div>
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center">
-                                    <div class="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
-                                    <span class="text-sm">Счета</span>
-                                </div>
-                                <span id="invoice-percent" class="text-sm font-medium">0%</span>
-                            </div>
-                            <div class="w-full bg-gray-200 rounded-full h-2.5 mt-3">
-                                <div id="payment-method-chart" class="bg-gradient-to-r from-blue-500 to-green-500 h-2.5 rounded-full" style="width: 100%"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <!-- Учёт средств запаса -->
-            <div class="bg-white rounded-xl shadow-md overflow-hidden mt-8 fade-in">
-                <div class="p-6 border-b border-gray-200 flex justify-between items-center">
-                    <h2 class="text-xl font-semibold text-gray-800">
-                        <i class="fas fa-piggy-bank text-blue-500 mr-3"></i>
-                        Учёт средств запаса
-                    </h2>
-                </div>
-                
-                <div class="p-6">
-                    <!-- Текущий остаток -->
-                    <div class="reserve-balance p-6 mb-6 flex items-center justify-between">
-                        <div>
-                            <div class="text-sm opacity-80">Текущий остаток средств</div>
-                            <div class="text-2xl font-bold" id="reserve-amount">0 ₽</div>
-                        </div>
-                        <i class="fas fa-coins text-3xl opacity-30"></i>
-                    </div>
-                    
-                    <!-- Форма выдачи средств запаса -->
-                    <div class="mb-8">
-                        <h3 class="text-md font-medium text-gray-700 mb-4">Выдать средства запаса</h3>
-                        <form id="reserve-form">
-                            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                                <div class="md:col-span-1">
-                                    <label class="block text-gray-700 mb-2">Сумма</label>
-                                    <div class="relative">
-                                        <input type="number" id="reserve-amount-input" min="0" step="0.01" 
-                                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                               placeholder="0.00" required>
-                                        <span class="currency-label absolute right-3 top-2 text-gray-500">₽</span>
-                                    </div>
-                                </div>
-                                
-                                <div class="md:col-span-1">
-                                    <label class="block text-gray-700 mb-2">Дата</label>
-                                    <input type="date" id="reserve-date" 
-                                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                           required>
-                                </div>
-                                
-                                <div class="md:col-span-2">
-                                    <label class="block text-gray-700 mb-2">Комментарий</label>
-                                    <input type="text" id="reserve-comment" 
-                                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                           placeholder="Назначение выдачи" required>
-                                </div>
-                            </div>
-                            
-                            <div class="flex justify-end mt-4">
-                                <button type="submit" class="submit-btn px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 flex items-center">
-                                    <i class="fas fa-plus-circle mr-2"></i> Выдать средства
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                    
-                    <!-- Журнал операций -->
+                <div class="space-y-4">
                     <div>
-                        <div class="mb-4">
-                            <div class="flex justify-between items-center mb-3">
-                                <h3 class="text-md font-medium text-gray-700">Журнал операций</h3>
-                                <div class="relative">
-                                    <select id="reserve-sort" class="appearance-none pl-3 pr-8 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
-                                        <option value="newest" selected>Сначала новые</option>
-                                        <option value="oldest">Сначала старые</option>
-                                        <option value="amount_high">По сумме (убыв.)</option>
-                                        <option value="amount_low">По сумме (возр.)</option>
-                                    </select>
-                                    <div class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-                                        <i class="fas fa-chevron-down text-gray-400 text-xs"></i>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <!-- Search input -->
-                            <div class="relative mb-3">
-                                <input type="text" id="reserve-search" class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Поиск по комментарию...">
-                                <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
-                            </div>
-                            
-                            <!-- Pagination controls -->
-                            <div class="flex justify-between items-center mt-4">
-                                <div id="reserve-page-info" class="text-sm text-gray-600">Страница 1 из 1</div>
-                                <div class="flex space-x-2">
-                                    <button id="reserve-prev-page" class="px-4 py-1 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 disabled:opacity-50" disabled>
-                                        <i class="fas fa-chevron-left mr-1"></i> Назад
-                                    </button>
-                                    <button id="reserve-next-page" class="px-4 py-1 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 disabled:opacity-50" disabled>
-                                        Вперед <i class="fas fa-chevron-right ml-1"></i>
-                                    </button>
-                                </div>
-                            </div>
+                        <label for="login-email" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                        <input type="email" id="login-email" class="w-full px-4 py-2 rounded-lg border border-gray-300 input-field focus:outline-none focus:border-indigo-500" placeholder="example@mail.com">
+                    </div>
+                    
+                    <div>
+                        <label for="login-password" class="block text-sm font-medium text-gray-700 mb-1">Пароль</label>
+                        <div class="relative">
+                            <input type="password" id="login-password" class="w-full px-4 py-2 rounded-lg border border-gray-300 input-field focus:outline-none focus:border-indigo-500" placeholder="••••••••">
+                            <button class="absolute right-3 top-2 text-gray-400 hover:text-gray-600" onclick="togglePassword('login-password')">
+                                <i class="far fa-eye"></i>
+                            </button>
                         </div>
-                        <div class="overflow-x-auto">
-                            <table class="min-w-full divide-y divide-gray-200">
-                                <thead class="bg-gray-50">
-                                    <tr>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Дата</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Тип</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Сумма</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Комментарий</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="reserve-operations-table" class="bg-white divide-y divide-gray-200">
-                                    <!-- Заполнится динамически -->
-                                    <tr>
-                                        <td colspan="4" class="text-center py-4 text-gray-400">
-                                            <i class="fas fa-inbox text-xl mb-2"></i>
-                                            <p>Нет операций</p>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                    </div>
+                    
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <input type="checkbox" id="remember-me" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                            <label for="remember-me" class="ml-2 block text-sm text-gray-700">Запомнить меня</label>
                         </div>
+                        <a href="#" class="text-sm text-indigo-600 hover:text-indigo-500">Забыли пароль?</a>
+                    </div>
+                    
+                    <button id="login-button" class="w-full bg-indigo-600 text-white py-2 rounded-lg font-medium hover:bg-indigo-700 transition duration-300">
+                        Войти
+                    </button>
+                    <button id="demo-login-button" class="w-full mt-3 bg-green-600 text-white py-2 rounded-lg font-medium hover:bg-green-700 transition duration-300">
+                        Быстрый демо-вход
+                    </button>
+                </div>
+                
+                <div class="mt-6">
+                    <div class="relative">
+                        <div class="absolute inset-0 flex items-center">
+                            <div class="w-full border-t border-gray-300"></div>
+                        </div>
+                        <div class="relative flex justify-center text-sm">
+                            <span class="px-2 bg-white text-gray-500">Или войдите через</span>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4 grid grid-cols-2 gap-3">
+                        <a href="#" class="social-btn telegram-btn text-white py-2 px-4 rounded-lg flex items-center justify-center">
+                            <i class="fab fa-telegram mr-2"></i> Telegram
+                        </a>
+                        <a href="#" class="social-btn yandex-btn text-white py-2 px-4 rounded-lg flex items-center justify-center">
+                            <i class="fab fa-yandex mr-2"></i> Яндекс
+                        </a>
                     </div>
                 </div>
             </div>
-        </main>
-    </div>
-
-    <!-- Модальное окно просмотра документа -->
-    <div id="document-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
-        <div class="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-hidden fade-in">
-            <div class="p-4 border-b border-gray-200 flex justify-between items-center">
-                <h3 class="text-lg font-semibold text-gray-800" id="document-modal-title"></h3>
-                <button id="close-document-modal" class="text-gray-400 hover:text-gray-600">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="p-4 overflow-y-auto flex items-center justify-center">
-                <img id="document-modal-image" class="max-w-full max-h-[70vh] rounded-lg" src="" alt="Документ">
-            </div>
-        </div>
-    </div>
-
-    <!-- Модальное окно редактирования отчёта -->
-    <div id="edit-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
-        <div class="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto fade-in">
-            <div class="p-4 border-b border-gray-200 flex justify-between items-center">
-                <h3 class="text-lg font-semibold text-gray-800">Редактирование отчёта</h3>
-                <button id="close-edit-modal" class="text-gray-400 hover:text-gray-600">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="p-6">
-                <form id="edit-form">
-                    <input type="hidden" id="edit-id">
+            
+            <!-- Форма регистрации -->
+            <div id="register-form" class="form-switch hidden">
+                <h1 class="text-2xl font-bold text-gray-800 mb-6">Создайте аккаунт</h1>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label for="register-name" class="block text-sm font-medium text-gray-700 mb-1">Имя</label>
+                        <input type="text" id="register-name" class="w-full px-4 py-2 rounded-lg border border-gray-300 input-field focus:outline-none focus:border-indigo-500" placeholder="Ваше имя">
+                    </div>
                     
-                    <div class="grid form-grid gap-4 md:grid-cols-2">
-                        <!-- Сумма -->
-                        <div class="mb-4">
-                            <label class="block text-gray-700 mb-2">Сумма</label>
-                            <div class="relative">
-                                <input type="number" id="edit-amount" min="0" step="0.01" 
-                                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent amount-input"
-                                       placeholder="0.00" required>
-                                <span class="currency-label absolute right-3 top-2 text-gray-500">₽</span>
-                            </div>
+                    <div>
+                        <label for="register-email" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                        <input type="email" id="register-email" class="w-full px-4 py-2 rounded-lg border border-gray-300 input-field focus:outline-none focus:border-indigo-500" placeholder="example@mail.com">
+                    </div>
+                    
+                    <div>
+                        <label for="register-password" class="block text-sm font-medium text-gray-700 mb-1">Пароль</label>
+                        <div class="relative">
+                            <input type="password" id="register-password" class="w-full px-4 py-2 rounded-lg border border-gray-300 input-field focus:outline-none focus:border-indigo-500" placeholder="••••••••">
+                            <button class="absolute right-3 top-2 text-gray-400 hover:text-gray-600" onclick="togglePassword('register-password')">
+                                <i class="far fa-eye"></i>
+                            </button>
                         </div>
-                        
-                        <!-- Дата -->
-                        <div class="mb-4">
-                            <label class="block text-gray-700 mb-2">Дата</label>
-                            <input type="date" id="edit-date" 
-                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                   required>
-                        </div>
-                        
-                        <!-- Тип оплата -->
-                        <div class="mb-4 md:col-span-2">
-                            <label class="block text-gray-700 mb-2">Форма оплаты</label>
-                            <div class="grid grid-cols-2 gap-2 w-full">
-                                <button type="button" class="edit-payment-method-btn px-4 py-2 border border-gray-300 rounded-lg" data-method="cash">
-                                    <i class="fas fa-money-bill-wave mr-2"></i> Нал
-                                </button>
-                                <button type="button" class="edit-payment-method-btn px-4 py-2 border border-gray-300 rounded-lg" data-method="invoice">
-                                    <i class="fas fa-file-invoice mr-2"></i> Счёт
-                                </button>
-                            </div>
-                            <input type="hidden" id="edit-payment-method" value="cash" required>
-                        </div>
-                        
-                        <!-- Оплачено своими средствами -->
-                        <div class="mb-4 md:col-span-2">
-                            <label class="flex items-center space-x-2">
-                                <input type="checkbox" id="edit-self-paid" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
-                                <span class="text-gray-700">Оплачено собственными средствами</span>
-                            </label>
-                        </div>
-                        
-                        <!-- Оплачено средствами запаса -->
-                        <div class="mb-4 md:col-span-2" id="edit-use-reserve-container">
-                            <label class="flex items-center space-x-2">
-                                <input type="checkbox" id="edit-use-reserve" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
-                                <span class="text-gray-700">Оплата средствами запаса</span>
-                            </label>
-                        </div>
-                        
-                        <!-- Комментарий -->
-                        <div class="mb-4 md:col-span-2">
-                            <label class="block text-gray-700 mb-2">Комментарий</label>
-                            <textarea id="edit-comment" rows="3"
-                                      class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                      placeholder="На что были потрачены средства"></textarea>
-                        </div>
-                        
-                        <!-- Загрузка файла -->
-                        <div class="mb-4 md:col-span-2">
-                            <label class="block text-gray-700 mb-2">Документ (чек, счёт)</label>
-                            <label for="edit-file-upload" class="file-input-label flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
-                                <div class="flex flex-col items-center justify-center pt-5 pb-6">
-                                    <i class="fas fa-cloud-upload-alt text-3xl text-gray-400 mb-2"></i>
-                                    <p class="mb-2 text-sm text-gray-500">
-                                        <span class="font-semibold">Нажмите для загрузки</span> или перетащите файл
-                                    </p>
-                                    <p class="text-xs text-gray-500">PNG, JPG, PDF (до 5MB)</p>
-                                </div>
-                                <input id="edit-file-upload" type="file" class="hidden" accept="image/*,.pdf">
-                            </label>
-                            <div id="edit-file-preview" class="mt-2 hidden">
-                                <div class="flex items-center justify-between bg-gray-100 p-2 rounded-lg">
-                                    <div class="flex items-center">
-                                        <i class="fas fa-file-image text-blue-500 mr-2 text-xl"></i>
-                                        <div>
-                                            <p id="edit-file-name" class="text-sm font-medium text-gray-700"></p>
-                                            <p id="edit-file-size" class="text-xs text-gray-500"></p>
-                                        </div>
-                                    </div>
-                                    <button type="button" id="edit-remove-file" class="text-red-500 hover:text-red-700">
-                                        <i class="fas fa-times"></i>
-                                    </button>
-                                </div>
-                                <img id="edit-file-preview-image" class="file-preview-image mt-2 rounded-lg hidden">
-                            </div>
+                        <p class="mt-1 text-xs text-gray-500">Минимум 6 символов</p>
+                    </div>
+                    
+                    <div>
+                        <label for="register-confirm-password" class="block text-sm font-medium text-gray-700 mb-1">Подтвердите пароль</label>
+                        <div class="relative">
+                            <input type="password" id="register-confirm-password" class="w-full px-4 py-2 rounded-lg border border-gray-300 input-field focus:outline-none focus:border-indigo-500" placeholder="••••••••">
+                            <button class="absolute right-3 top-2 text-gray-400 hover:text-gray-600" onclick="togglePassword('register-confirm-password')">
+                                <i class="far fa-eye"></i>
+                            </button>
                         </div>
                     </div>
                     
-                    <!-- Кнопки редактирования -->
-                    <div class="flex justify-end space-x-3 mt-6">
-                        <button type="button" id="cancel-edit" class="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 flex items-center">
-                            <i class="fas fa-times mr-2"></i> Отмена
-                        </button>
-                        <button type="submit" class="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 flex items-center">
-                            <i class="fas fa-save mr-2"></i> Сохранить изменения
+                    <div class="flex items-center">
+                        <input type="checkbox" id="agree-terms" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                        <label for="agree-terms" class="ml-2 block text-sm text-gray-700">
+                            Я согласен с <a href="#" class="text-indigo-600 hover:text-indigo-500">условиями использования</a>
+                        </label>
+                    </div>
+                    
+                    <button id="register-button" class="w-full bg-indigo-600 text-white py-2 rounded-lg font-medium hover:bg-indigo-700 transition duration-300">
+                        Зарегистрироваться
+                    </button>
+                </div>
+                
+                <div class="mt-4 text-center text-sm text-gray-600">
+                    Уже есть аккаунт? <button class="text-indigo-600 hover:text-indigo-500 toggle-to-login">Войти</button>
+                </div>
+            </div>
+
+            <!-- Вид профиля (скрыт по умолчанию) -->
+            <div id="profile-view" class="hidden p-8 pt-12 bg-white">
+                <div class="flex flex-col items-center">
+                    <div class="relative group">
+                        <div class="w-20 h-20 rounded-full bg-indigo-100 flex items-center justify-center mb-4 overflow-hidden">
+                            <img id="profile-avatar" src="" alt="" class="hidden w-full h-full object-cover">
+                            <i id="default-avatar-icon" class="fas fa-user text-indigo-500 text-3xl"></i>
+                        </div>
+                        <label for="avatar-upload" class="absolute bottom-1 right-1 bg-gray-200 rounded-full p-2 cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity">
+                            <i class="fas fa-camera text-gray-700 text-xs"></i>
+                            <input type="file" id="avatar-upload" accept="image/*" class="hidden">
+                        </label>
+                    </div>
+                    
+                    <div class="w-full max-w-xs mb-6">
+                        <div id="name-view" class="flex justify-center items-center">
+                            <h2 id="profile-name" class="text-xl font-bold text-gray-800 mr-2 text-center">Демо Пользователь</h2>
+                            <button id="edit-name-btn" class="text-indigo-500 hover:text-indigo-700">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                        </div>
+                        <div id="name-edit" class="hidden flex items-center">
+                            <input type="text" id="profile-name-input" class="flex-1 px-2 py-1 border rounded">
+                            <button id="save-name-btn" class="ml-2 px-2 text-indigo-500 hover:text-indigo-700">
+                                <i class="fas fa-check"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <p id="profile-email" class="text-gray-600 mb-6">demo@example.com</p>
+                    
+                    <div class="w-full max-w-xs space-y-3">
+                        <button id="logout-button" class="w-full bg-gray-200 text-gray-800 py-2 rounded-lg font-medium hover:bg-gray-300 transition duration-300">
+                            Выйти
                         </button>
                     </div>
-                </form>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
-        // Состояние приложения
-        const reportState = {
-            reports: [],
-            reserveOperations: [],
-            reserveCurrentPage: 1,
-            reserveItemsPerPage: 10,
-            reserveSearchQuery: '',
-            reserveAmount: 0,
-            paymentMethod: 'cash',
-            status: 'not_ordered',
-            selfPaid: false,
-            currentPage: 1,
-            itemsPerPage: 5,
-            filter: 'all',
-            statusFilter: 'all',
-            editFile: null,
-            newReportExpanded: false
-        };
+        // Переключение между формами входа и регистрации
+        const loginToggle = document.getElementById('login-toggle');
+        const registerToggle = document.getElementById('register-toggle');
+        const loginForm = document.getElementById('login-form');
+        const registerForm = document.getElementById('register-form');
+        const toggleToLoginButtons = document.querySelectorAll('.toggle-to-login');
         
-        // Элементы DOM
-        const reportElements = {
-            form: document.getElementById('report-form'),
-            amountInput: document.getElementById('amount'),
-            dateInput: document.getElementById('date'),
-            paymentMethodInput: document.getElementById('payment-method'),
-            paymentMethodBtns: document.querySelectorAll('.payment-method-btn'),
-            statusInput: document.getElementById('status'),
-            selfPaidInput: document.getElementById('self-paid'),
-            useReserveCheckbox: document.getElementById('use-reserve'),
-            useReserveContainer: document.getElementById('use-reserve-container'),
-            commentInput: document.getElementById('comment'),
-            fileUpload: document.getElementById('file-upload'),
-            filePreview: document.getElementById('file-preview'),
-            fileName: document.getElementById('file-name'),
-            fileSize: document.getElementById('file-size'),
-            filePreviewImage: document.getElementById('file-preview-image'),
-            removeFileBtn: document.getElementById('remove-file'),
-            reportsList: document.getElementById('reports-list'),
-            reportFilter: document.getElementById('report-filter'),
-            statusFilter: document.getElementById('status-filter'),
-            documentModal: document.getElementById('document-modal'),
-            documentModalTitle: document.getElementById('document-modal-title'),
-            documentModalImage: document.getElementById('document-modal-image'),
-            closeDocumentModalBtn: document.getElementById('close-document-modal'),
-            editModal: document.getElementById('edit-modal'),
-            editForm: document.getElementById('edit-form'),
-            editId: document.getElementById('edit-id'),
-            editAmount: document.getElementById('edit-amount'),
-            editDate: document.getElementById('edit-date'),
-            editPaymentMethodInput: document.getElementById('edit-payment-method'),
-            editPaymentMethodBtns: document.querySelectorAll('.edit-payment-method-btn'),
-            editSelfPaidInput: document.getElementById('edit-self-paid'),
-            editComment: document.getElementById('edit-comment'),
-            editFileUpload: document.getElementById('edit-file-upload'),
-            editFilePreview: document.getElementById('edit-file-preview'),
-            editFileName: document.getElementById('edit-file-name'),
-            editFileSize: document.getElementById('edit-file-size'),
-            editFilePreviewImage: document.getElementById('edit-file-preview-image'),
-            editRemoveFileBtn: document.getElementById('edit-remove-file'),
-            editUseReserveCheckbox: document.getElementById('edit-use-reserve'),
-            editUseReserveContainer: document.getElementById('edit-use-reserve-container'),
-            closeEditModalBtn: document.getElementById('close-edit-modal'),
-            cancelEditBtn: document.getElementById('cancel-edit'),
-            prevPageBtn: document.getElementById('prev-page'),
-            nextPageBtn: document.getElementById('next-page'),
-            pageInfo: document.getElementById('page-info'),
-            totalAmount: document.getElementById('total-amount'),
-            monthlyAmount: document.getElementById('monthly-amount'),
-            selfPaidAmount: document.getElementById('self-paid-amount'),
-            unpaidSelfAmount: document.getElementById('unpaid-self-amount'),
-            cashPercent: document.getElementById('cash-percent'),
-            invoicePercent: document.getElementById('invoice-percent'),
-            paymentMethodChart: document.getElementById('payment-method-chart'),
-            monthlyChart: document.getElementById('monthly-chart'),
-            newReportHeader: document.getElementById('new-report-header'),
-            newReportContent: document.getElementById('new-report-content'),
-            newReportChevron: document.getElementById('new-report-chevron'),
-            reserveForm: document.getElementById('reserve-form'),
-            reserveAmountInput: document.getElementById('reserve-amount-input'),
-            reserveDateInput: document.getElementById('reserve-date'),
-            reserveCommentInput: document.getElementById('reserve-comment'),
-            reserveAmountDisplay: document.getElementById('reserve-amount'),
-            reserveOperationsTable: document.getElementById('reserve-operations-table')
-        };
-        
-        // Инициализация приложения
-        function initReports() {
-            // Устанавливаем сегодняшнюю дату по умолчанию
-            const today = new Date().toISOString().split('T')[0];
-            reportElements.dateInput.value = today;
-            reportElements.editDate.value = today;
-            reportElements.reserveDateInput.value = today;
-            
-            // Загружаем данные из localStorage
-            loadReportsFromStorage();
-            
-            // Настройка обработчиков событий
-            setupReportEventListeners();
-            
-            // Инициализация пагинации
-            updatePagination();
-            setupReserveOperationsListeners();
-            
-            // Сворачиваем форму нового отчёта при инициализации
-            toggleNewReportForm(false); 
-            
-            // Обновляем отображение средств запаса
-            updateReserveDisplay();
-        }
-        
-        // Загрузка данных из localStorage
-        function loadReportsFromStorage() {
-            const savedReports = localStorage.getItem('reports');
-            const savedReserve = localStorage.getItem('reserveOperations');
-            const savedReserveAmount = localStorage.getItem('reserveAmount');
-            
-            if (savedReports) {
-                reportState.reports = JSON.parse(savedReports);
-                renderReports();
-                updateStatistics();
-            }
-            
-            if (savedReserve) {
-                reportState.reserveOperations = JSON.parse(savedReserve);
-            }
-            
-            if (savedReserveAmount) {
-                reportState.reserveAmount = parseFloat(savedReserveAmount);
-                reportElements.reserveAmountDisplay.textContent = `${reportState.reserveAmount.toLocaleString('ru-RU')} ₽`;
-            }
-            
-            renderReserveOperations();
-        }
-        
-        // Сохранение данных в localStorage
-        function saveReportsToStorage() {
-            localStorage.setItem('reports', JSON.stringify(reportState.reports));
-            localStorage.setItem('reserveOperations', JSON.stringify(reportState.reserveOperations));
-            localStorage.setItem('reserveAmount', reportState.reserveAmount.toString());
-        }
-        
-        // Обновление пагинации для журнала операций
-        function updateReservePagination(filteredOperations) {
-            const totalPages = Math.ceil(filteredOperations.length / reportState.reserveItemsPerPage);
-            
-            // Обновляем информацию о странице
-            const pageInfo = reportState.reserveCurrentPage > totalPages && totalPages > 0 ? 
-                `Страница ${totalPages} из ${totalPages}` :
-                `Страница ${reportState.reserveCurrentPage} из ${totalPages || 1}`;
-            
-            document.getElementById('reserve-page-info').textContent = pageInfo;
-            
-            // Обновляем состояние кнопок
-            document.getElementById('reserve-prev-page').disabled = reportState.reserveCurrentPage <= 1;
-            document.getElementById('reserve-next-page').disabled = 
-                reportState.reserveCurrentPage >= totalPages || totalPages === 0;
-        }
-
-        // Обработчики для пагинации и поиска операций
-        function setupReserveOperationsListeners() {
-            // Обработчик изменения сортировки операций
-            if (reportElements.reserveSort) {
-                reportElements.reserveSort.addEventListener('change', function() {
-                    reportState.reserveCurrentPage = 1;
-                    renderReserveOperations();
-                });
-            }
-            
-            // Обработчик поиска
-            document.getElementById('reserve-search').addEventListener('input', function(e) {
-                reportState.reserveSearchQuery = e.target.value;
-                reportState.reserveCurrentPage = 1;
-                renderReserveOperations();
-            });
-            
-            // Обработчик предыдущей страницы
-            document.getElementById('reserve-prev-page').addEventListener('click', function() {
-                if (reportState.reserveCurrentPage > 1) {
-                    reportState.reserveCurrentPage--;
-                    renderReserveOperations();
-                }
-            });
-            
-            // Обработчик следующей страницы
-            document.getElementById('reserve-next-page').addEventListener('click', function() {
-                const filteredOperations = getFilteredReserveOperations();
-                const totalPages = Math.ceil(filteredOperations.length / reportState.reserveItemsPerPage);
+        // Инициализация кнопок переключения
+        [loginToggle, registerToggle].forEach(button => {
+            button.addEventListener('click', () => {
+                loginToggle.classList.toggle('active', button === loginToggle);
+                registerToggle.classList.toggle('active', button === registerToggle);
                 
-                if (reportState.reserveCurrentPage < totalPages) {
-                    reportState.reserveCurrentPage++;
-                    renderReserveOperations();
-                }
+                loginForm.classList.toggle('hidden', button === registerToggle);
+                registerForm.classList.toggle('hidden', button === loginToggle);
             });
+        });
+        
+        // Инициализация кнопок "Войти" на форме регистрации
+        toggleToLoginButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                loginToggle.click();
+            });
+        });
+        
+        // Функция для переключения видимости пароля
+        function togglePassword(inputId) {
+            const input = document.getElementById(inputId);
+            const icon = input.nextElementSibling.querySelector('i');
+            
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
         }
         
-        // Получение отфильтрованных операций запаса
-        function getFilteredReserveOperations() {
-            let operations = [...reportState.reserveOperations];
-            
-            if (reportState.reserveSearchQuery.trim() !== '') {
-                const query = reportState.reserveSearchQuery.toLowerCase();
-                operations = operations.filter(op => 
-                    (op.comment || '').toLowerCase().includes(query)
-                );
-            }
-            
-            return operations;
-        }
+        // Демо вход (автоматически заполняет и авторизует)
+        document.getElementById('demo-login-button').addEventListener('click', () => {
+            document.getElementById('login-email').value = 'demo@example.com';
+            document.getElementById('login-password').value = 'demopassword123';
+            document.getElementById('login-button').click();
+        });
 
-        // Обновление отображения средств запаса
-        function updateReserveDisplay() {
-            reportElements.reserveAmountDisplay.textContent = `${reportState.reserveAmount.toLocaleString('ru-RU')} ₽`;
-            renderReserveOperations();
+        // Обработка входа
+        document.getElementById('login-button').addEventListener('click', () => {
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
             
-            // Показываем или скрываем чекбокс в зависимости от наличия средств запаса
-            if (reportState.reserveAmount > 0) {
-    reportElements.useReserveContainer.style.display = 'block';
-} else {
-    reportElements.useReserveContainer.style.display = 'block'; // Всегда показываем
-    reportElements.useReserveCheckbox.disabled = true;         // Но делаем его недоступным
-    reportElements.useReserveCheckbox.checked = false;
-}
-        }
-        
-        // Отображение журнала операций запаса с пагинацией и поиском
-        function renderReserveOperations() {
-            const table = reportElements.reserveOperationsTable;
-            table.innerHTML = '';
-            
-            // Получаем выбранный тип сортировки
-            const sortType = reportElements.reserveSort ? reportElements.reserveSort.value : 'newest';
-            
-            // Фильтруем операции по поисковому запросу
-            let filteredOperations = [...reportState.reserveOperations];
-            
-            if (reportState.reserveSearchQuery.trim() !== '') {
-                const query = reportState.reserveSearchQuery.toLowerCase();
-                filteredOperations = filteredOperations.filter(op => 
-                    (op.comment || '').toLowerCase().includes(query)
-                );
-            }
-            
-            // Сортируем операции в зависимости от выбранного типа
-            let sortedOperations = [...filteredOperations];
-            
-            switch(sortType) {
-                case 'newest':
-                    sortedOperations.sort((a, b) => b.id - a.id);
-                    break;
-                case 'oldest':
-                    sortedOperations.sort((a, b) => a.id - b.id);
-                    break;
-                case 'amount_high':
-                    sortedOperations.sort((a, b) => b.amount - a.amount);
-                    break;
-                case 'amount_low':
-                    sortedOperations.sort((a, b) => a.amount - b.amount);
-                    break;
-                default:
-                    sortedOperations.sort((a, b) => b.id - a.id);
-            }
-            
-            if (sortedOperations.length === 0) {
-                table.innerHTML = `
-                    <tr>
-                        <td colspan="4" class="text-center py-4 text-gray-400">
-                            <i class="fas fa-search text-xl mb-2"></i>
-                            <p>Операции не найдены</p>
-                        </td>
-                    </tr>
-                `;
-                updateReservePagination(filteredOperations);
+            if (!email || !password) {
+                alert('Пожалуйста, заполните все поля');
                 return;
             }
             
-            // Пагинация
-            const startIndex = (reportState.reserveCurrentPage - 1) * reportState.reserveItemsPerPage;
-            const paginatedOperations = sortedOperations.slice(
-                startIndex, 
-                startIndex + reportState.reserveItemsPerPage
-            );
+            // Демо: показываем профиль
+            document.getElementById('login-form').classList.add('hidden');
+            document.getElementById('register-form').classList.add('hidden');
+            document.querySelector('.auth-container').classList.add('pt-8'); // Add padding compensation
+            document.querySelector('.flex.rounded-lg.p-1.bg-gray-100.mb-6').classList.add('hidden'); // Hide toggle
+            document.getElementById('profile-view').classList.remove('hidden');
             
-            // Рендер операций
-            paginatedOperations.forEach(op => {
-                const row = document.createElement('tr');
-                
-                // Форматируем дату
-                const date = new Date(op.date);
-                const formattedDate = date.toLocaleDateString('ru-RU', {
-                    day: 'numeric',
-                    month: 'long',
-                    year: 'numeric'
-                });
-                
-                // Определяем тип операции
-                const typeClass = op.type === 'add' ? 
-                    'text-green-600 bg-green-50 rounded-full px-2 py-1 text-xs' : 
-                    'text-red-600 bg-red-50 rounded-full px-2 py-1 text-xs';
-                const typeText = op.type === 'add' ? 'Выдача' : 'Списание';
-                
-                row.innerHTML = `
-                    <td class="px-6 py-4 whitespace-nowrap">${formattedDate}</td>
-                    <td class="px-6 py-4 whitespace-nowrap"><span class="${typeClass}">${typeText}</span></td>
-                    <td class="px-6 py-4 whitespace-nowrap">${op.amount.toLocaleString('ru-RU')} ₽</td>
-                    <td class="px-6 py-4">${op.comment || ''}</td>
-                `;
-                table.appendChild(row);
-            });
-        }
+            // Устанавливаем данные пользователя
+            document.getElementById('profile-name').textContent = 'Демо Пользователь';
+            document.getElementById('profile-email').textContent = email;
+        });
         
-        // Настройка обработчиков событий
-        function setupReportEventListeners() {
-            // Обработчик изменения сортировки операций
-            reportElements.reserveSort = document.getElementById('reserve-sort');
-            if (reportElements.reserveSort) {
-                reportElements.reserveSort.addEventListener('change', function() {
-                    renderReserveOperations();
-                });
-            }
-            // Переключение метода оплаты
-            reportElements.paymentMethodBtns.forEach(btn => {
-    btn.addEventListener('click', function() {
-        // Обновляем состояние
-        reportElements.paymentMethodBtns.forEach(b => b.classList.remove('active'));
-        this.classList.add('active');
-        reportState.paymentMethod = this.dataset.method;
-        reportElements.paymentMethodInput.value = this.dataset.method;
-
-        const paymentMethod = this.dataset.method;
-        const selfPaidCheckbox = document.getElementById('self-paid');
-        const useReserveCheckbox = document.getElementById('use-reserve');
-
-        if (paymentMethod === 'invoice') {
-            // Блокируем чекбоксы, но не скрываем их
-            selfPaidCheckbox.disabled = true;
-            useReserveCheckbox.disabled = true;
-            // Можно также снять галочки, если это нужно
-            selfPaidCheckbox.checked = false;
-            useReserveCheckbox.checked = false;
-        } else {
-            // Разрешаем выбор, если не "Счёт"
-            selfPaidCheckbox.disabled = false;
-            useReserveCheckbox.disabled = false;
-        }
-    });
-});
+        // Обработка регистрации
+        document.getElementById('register-button').addEventListener('click', () => {
+            const name = document.getElementById('register-name').value;
+            const email = document.getElementById('register-email').value;
+            const password = document.getElementById('register-password').value;
+            const confirmPassword = document.getElementById('register-confirm-password').value;
+            const agreeTerms = document.getElementById('agree-terms').checked;
             
-            // Переключение метода оплаты в модальном окне редактирования
-            reportElements.editPaymentMethodBtns.forEach(btn => {
-                btn.addEventListener('click', function() {
-                    reportElements.editPaymentMethodBtns.forEach(b => b.classList.remove('active'));
-                    this.classList.add('active');
-                    const paymentMethod = this.dataset.method;
-                    reportElements.editPaymentMethodInput.value = paymentMethod;
-
-                    if (paymentMethod === 'invoice') {
-                        reportElements.editSelfPaidInput.disabled = true;
-                        reportElements.editUseReserveCheckbox.disabled = true;
-                        reportElements.editSelfPaidInput.checked = false;
-                        reportElements.editUseReserveCheckbox.checked = false;
-                    } else {
-                        reportElements.editSelfPaidInput.disabled = false;
-                        reportElements.editUseReserveCheckbox.disabled = false;
-                    }
-                });
-            });
-            // Обработчики для чекбоксов "собственные средства" и "средства запаса"
-const selfPaidCheckbox = document.getElementById('self-paid');
-const useReserveCheckbox = document.getElementById('use-reserve');
-
-if (selfPaidCheckbox && useReserveCheckbox) {
-    selfPaidCheckbox.addEventListener('change', function () {
-        if (this.checked) {
-            useReserveCheckbox.checked = false;
-        }
-    });
-
-    useReserveCheckbox.addEventListener('change', function () {
-        if (this.checked) {
-            selfPaidCheckbox.checked = false;
-        }
-    });
-}
-            // Загрузка файла
-            reportElements.fileUpload.addEventListener('change', function(e) {
-                if (this.files && this.files[0]) {
-                    const file = this.files[0];
-                    const fileSize = formatFileSize(file.size);
-                    
-                    reportElements.fileName.textContent = file.name;
-                    reportElements.fileSize.textContent = fileSize;
-                    reportElements.filePreview.classList.remove('hidden');
-                    
-                    // Показываем превью для изображений
-                    if (file.type.match('image.*')) {
-                        const reader = new FileReader();
-                        reader.onload = function(e) {
-                            reportElements.filePreviewImage.src = e.target.result;
-                            reportElements.filePreviewImage.classList.remove('hidden');
-                        }
-                        reader.readAsDataURL(file);
-                    } else {
-                        reportElements.filePreviewImage.classList.add('hidden');
-                    }
-                }
-            });
-            
-            // Удаление файла
-            reportElements.removeFileBtn.addEventListener('click', function() {
-                reportElements.fileUpload.value = '';
-                reportElements.filePreview.classList.add('hidden');
-                reportElements.filePreviewImage.classList.add('hidden');
-            });
-            
-            // Фильтрация отчетов
-            reportElements.reportFilter.addEventListener('change', function() {
-                reportState.filter = this.value;
-                reportState.currentPage = 1;
-                renderReports();
-                updatePagination();
-            });
-            
-            // Фильтрация по статусу
-            reportElements.statusFilter.addEventListener('change', function() {
-                reportState.statusFilter = this.value;
-                reportState.currentPage = 1;
-                renderReports();
-                updatePagination();
-            });
-            
-            // Просмотр документа
-            reportElements.closeDocumentModalBtn.addEventListener('click', function() {
-                reportElements.documentModal.classList.add('hidden');
-            });
-            
-            // Обработка отправки формы
-            reportElements.form.addEventListener('submit', async function(e) {
-                e.preventDefault();
-                
-                let fileData = null;
-                if (reportElements.fileUpload.files[0]) {
-                    fileData = await getFileData(reportElements.fileUpload.files[0]);
-                }
-                
-                const newReport = {
-                    id: Date.now(),
-                    amount: parseFloat(reportElements.amountInput.value),
-                    date: reportElements.dateInput.value,
-                    paymentMethod: reportState.paymentMethod,
-                    status: 'not_ordered',
-                    selfPaid: reportElements.selfPaidInput.checked,
-                    usedReserve: reportElements.useReserveCheckbox.checked,
-                    comment: reportElements.commentInput.value,
-                    fileName: reportElements.fileUpload.files[0]?.name || '',
-                    fileSize: reportElements.fileUpload.files[0] ? formatFileSize(reportElements.fileUpload.files[0].size) : '',
-                    fileType: reportElements.fileUpload.files[0]?.type || '',
-                    fileData: fileData
-                };
-                
-                // Обработка оплаты средствами запаса
-                if (newReport.usedReserve) {
-                    if (newReport.amount > reportState.reserveAmount) {
-                        showNotification('Недостаточно средств запаса!', 'error');
-                        return;
-                    }
-                    
-                    // Создаем операцию списания
-                    const reserveOperation = {
-                        type: 'use',
-                        id: Date.now(),
-                        amount: newReport.amount,
-                        date: newReport.date,
-                        comment: `Списание на отчёт #${newReport.id}: ${newReport.comment || 'Без комментария'}`,
-                        reportId: newReport.id
-                    };
-                    
-                    reportState.reserveOperations.push(reserveOperation);
-                    reportState.reserveAmount -= newReport.amount;
-                    
-                    // Показываем уведомление
-                    showNotification(`Списано ${newReport.amount} ₽ из средств запаса`, 'success');
-                }
-                
-                reportState.reports.unshift(newReport);
-                saveReportsToStorage();
-                renderReports();
-                updateStatistics();
-                updatePagination();
-                
-                // Сброс формы
-                this.reset();
-                reportElements.filePreview.classList.add('hidden');
-                reportElements.filePreviewImage.classList.add('hidden');
-                reportElements.dateInput.value = new Date().toISOString().split('T')[0];
-                reportElements.selfPaidInput.checked = false;
-                reportElements.useReserveCheckbox.checked = false;
-                
-                // Сброс активных кнопок
-                reportElements.paymentMethodBtns[0].click();
-                
-                // Обновляем отображение резерва
-                updateReserveDisplay();
-                
-                // Показываем уведомление
-                showNotification('Отчёт успешно сохранён!', 'success');
-                
-                // Сворачиваем форму после сохранения
-                toggleNewReportForm();
-            });
-            
-            // Форма пополнения средств запаса
-            reportElements.reserveForm.addEventListener('submit', function(e) {
-                e.preventDefault();
-                
-                const amount = parseFloat(reportElements.reserveAmountInput.value);
-                const date = reportElements.reserveDateInput.value;
-                const comment = reportElements.reserveCommentInput.value;
-                
-                if (!amount || amount <= 0) {
-                    showNotification('Укажите корректную сумму', 'error');
-                    return;
-                }
-                
-                // Создаем операцию пополнения
-                const reserveOperation = {
-                    type: 'add',
-                    id: Date.now(),
-                    amount: amount,
-                    date: date,
-                    comment: comment
-                };
-                
-                reportState.reserveOperations.push(reserveOperation);
-                reportState.reserveAmount += amount;
-                
-                // Сохраняем
-                saveReportsToStorage();
-                updateReserveDisplay();
-                
-                // Сброс формы
-                reportElements.reserveForm.reset();
-                reportElements.reserveDateInput.value = new Date().toISOString().split('T')[0];
-                
-                // Показываем уведомление
-                showNotification(`Средства запаса пополнены на ${amount} ₽`, 'success');
-            });
-            
-            // Закрытие модального окна редактирования
-            reportElements.closeEditModalBtn.addEventListener('click', function() {
-                reportElements.editModal.classList.add('hidden');
-            });
-            
-            reportElements.cancelEditBtn.addEventListener('click', function() {
-                reportElements.editModal.classList.add('hidden');
-            });
-            
-            // Загрузка файла в модальном окне редактирования
-            reportElements.editFileUpload.addEventListener('change', function(e) {
-                if (this.files && this.files[0]) {
-                    const file = this.files[0];
-                    const fileSize = formatFileSize(file.size);
-                    
-                    reportElements.editFileName.textContent = file.name;
-                    reportElements.editFileSize.textContent = fileSize;
-                    reportElements.editFilePreview.classList.remove('hidden');
-                    
-                    // Сохраняем файл для последующего сохранения
-                    reportState.editFile = file;
-                    
-                    // Показываем превью для изображений
-                    if (file.type.match('image.*')) {
-                        const reader = new FileReader();
-                        reader.onload = function(e) {
-                            reportElements.editFilePreviewImage.src = e.target.result;
-                            reportElements.editFilePreviewImage.classList.remove('hidden');
-                        }
-                        reader.readAsDataURL(file);
-                    } else {
-                        reportElements.editFilePreviewImage.classList.add('hidden');
-                    }
-                }
-            });
-            
-            // Удаление файла в модальном окне редактирования
-            reportElements.editRemoveFileBtn.addEventListener('click', function() {
-                reportElements.editFileUpload.value = '';
-                reportElements.editFilePreview.classList.add('hidden');
-                reportElements.editFilePreviewImage.classList.add('hidden');
-                reportState.editFile = null;
-            });
-            
-            // Взаимоисключение чекбоксов в форме редактирования
-            if (reportElements.editSelfPaidInput && reportElements.editUseReserveCheckbox) {
-                reportElements.editSelfPaidInput.addEventListener('change', function () {
-                    if (this.checked) {
-                        reportElements.editUseReserveCheckbox.checked = false;
-                    }
-                });
-
-                reportElements.editUseReserveCheckbox.addEventListener('change', function () {
-                    if (this.checked) {
-                        reportElements.editSelfPaidInput.checked = false;
-                    }
-                });
-            }
-
-            // Обработка отправки формы редактирования
-            reportElements.editForm.addEventListener('submit', async function(e) {
-                e.preventDefault();
-                
-                const reportId = parseInt(reportElements.editId.value);
-                const reportIndex = reportState.reports.findIndex(r => r.id === reportId);
-                
-                if (reportIndex !== -1) {
-                    const originalReport = reportState.reports[reportIndex];
-                    const wasUsingReserve = originalReport.usedReserve;
-                    const reserveAmount = parseFloat(reportElements.editAmount.value);
-                    
-                    let fileData = originalReport.fileData;
-                    let fileName = reportState.reports[reportIndex].fileName;
-                    let fileSize = reportState.reports[reportIndex].fileSize;
-                    let fileType = reportState.reports[reportIndex].fileType;
-                    
-                    // Обновляем файл, если был загружен новый
-                    if (reportState.editFile) {
-                        fileData = await getFileData(reportState.editFile);
-                        fileName = reportState.editFile.name;
-                        fileSize = formatFileSize(reportState.editFile.size);
-                        fileType = reportState.editFile.type;
-                    }
-                    
-                    // Handle reserve funds changes
-                    if (wasUsingReserve && !reportElements.editUseReserveCheckbox.checked) {
-                        // Return funds to reserve if unchecked
-                        const returnOperation = {
-                            type: 'add',
-                            amount: originalReport.amount,
-                            date: new Date().toISOString().split('T')[0],
-                            comment: `Возврат средств за отчёт #${originalReport.id}`,
-                            reportId: originalReport.id
-                        };
-                        reportState.reserveOperations.push(returnOperation);
-                        reportState.reserveAmount += originalReport.amount;
-                    } 
-                    else if (!wasUsingReserve && reportElements.editUseReserveCheckbox.checked) {
-                        // Deduct from reserve if newly checked
-                        if (reserveAmount > reportState.reserveAmount) {
-                            showNotification('Недостаточно средств запаса!', 'error');
-                            return;
-                        }
-                        const deductionOperation = {
-                            type: 'use',
-                            amount: reserveAmount,
-                            date: new Date().toISOString().split('T')[0],
-                            comment: `Списание на отчёт #${originalReport.id}: ${reportElements.editComment.value || 'Без комментария'}`,
-                            reportId: originalReport.id
-                        };
-                        reportState.reserveOperations.push(deductionOperation);
-                        reportState.reserveAmount -= reserveAmount;
-                    }
-                    else if (wasUsingReserve && reportElements.editUseReserveCheckbox.checked && originalReport.amount !== reserveAmount) {
-                        // Adjust reserve if amount changed
-                        const difference = originalReport.amount - reserveAmount;
-                        if (difference > 0) {
-                            // Return excess
-                            const returnOperation = {
-                                type: 'add',
-                                amount: difference,
-                                date: new Date().toISOString().split('T')[0],
-                                comment: `Корректировка средств за отчёт #${originalReport.id} (возврат)`,
-                                reportId: originalReport.id
-                            };
-                            reportState.reserveOperations.push(returnOperation);
-                            reportState.reserveAmount += difference;
-                        } else {
-                            // Deduct additional
-                            if (Math.abs(difference) > reportState.reserveAmount) {
-                                showNotification('Недостаточно средств запаса!', 'error');
-                                return;
-                            }
-                            const deductionOperation = {
-                                type: 'use',
-                                amount: Math.abs(difference),
-                                date: new Date().toISOString().split('T')[0],
-                                comment: `Корректировка средств за отчёт #${originalReport.id} (доплата)`,
-                                reportId: originalReport.id
-                            };
-                            reportState.reserveOperations.push(deductionOperation);
-                            reportState.reserveAmount -= Math.abs(difference);
-                        }
-                    }
-
-                    const updatedReport = {
-                        ...originalReport,
-                        amount: parseFloat(reportElements.editAmount.value),
-                        date: reportElements.editDate.value,
-                        paymentMethod: reportElements.editPaymentMethodInput.value,
-                        selfPaid: reportElements.editSelfPaidInput.checked,
-                        usedReserve: reportElements.editUseReserveCheckbox.checked,
-                        comment: reportElements.editComment.value,
-                        fileName: fileName,
-                        fileSize: fileSize,
-                        fileType: fileType,
-                        fileData: fileData
-                    };
-                    
-                    reportState.reports[reportIndex] = updatedReport;
-                    saveReportsToStorage();
-                    renderReports();
-                    updateStatistics();
-                    
-                    // Закрываем модальное окно
-                    reportElements.editModal.classList.add('hidden');
-                    reportState.editFile = null;
-                    
-                    // Показываем уведомление
-                    showNotification('Отчёт успешно обновлён!', 'success');
-                }
-            });
-            
-            // Пагинация - предыдущая страница
-            reportElements.prevPageBtn.addEventListener('click', function() {
-                if (reportState.currentPage > 1) {
-                    reportState.currentPage--;
-                    renderReports();
-                    updatePagination();
-                }
-            });
-            
-            // Пагинация - следующая страница
-            reportElements.nextPageBtn.addEventListener('click', function() {
-                const filteredReports = getFilteredReports();
-                const totalPages = Math.ceil(filteredReports.length / reportState.itemsPerPage);
-                
-                if (reportState.currentPage < totalPages) {
-                    reportState.currentPage++;
-                    renderReports();
-                    updatePagination();
-                }
-            });
-            
-            // Переключение состояния формы нового отчёта
-            reportElements.newReportHeader.addEventListener('click', toggleNewReportForm);
-        }
-        
-        // Переключение состояния формы нового отчёта
-        function toggleNewReportForm(forceState = null) {
-            if (forceState !== null) {
-                reportState.newReportExpanded = forceState;
-            } else {
-                reportState.newReportExpanded = !reportState.newReportExpanded;
-            }
-            
-            if (reportState.newReportExpanded) {
-                reportElements.newReportContent.classList.add('expanded');
-                reportElements.newReportChevron.classList.add('rotate-180');
-            } else {
-                reportElements.newReportContent.classList.remove('expanded');
-                reportElements.newReportChevron.classList.remove('rotate-180');
-            }
-        }
-        
-        // Получение отфильтрованных отчетов
-        function getFilteredReports() {
-            let filteredReports = [...reportState.reports];
-            
-            // Фильтрация по типу оплаты
-            if (reportState.filter !== 'all') {
-                filteredReports = filteredReports.filter(r => r.paymentMethod === reportState.filter);
-            }
-            
-            // Фильтрация по статусу
-            if (reportState.statusFilter !== 'all') {
-                filteredReports = filteredReports.filter(r => r.status === reportState.statusFilter);
-            }
-            
-            return filteredReports;
-        }
-        
-        // Получение данных файла
-        function getFileData(file) {
-            return new Promise((resolve) => {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    resolve(e.target.result);
-                };
-                reader.readAsDataURL(file);
-            });
-        }
-        
-        // Рендер списка отчетов с пагинацией
-        function renderReports() {
-            const filteredReports = getFilteredReports();
-            
-            // Пагинация
-            const startIndex = (reportState.currentPage - 1) * reportState.itemsPerPage;
-            const endIndex = startIndex + reportState.itemsPerPage;
-            const paginatedReports = filteredReports.slice(startIndex, endIndex);
-            
-            reportElements.reportsList.innerHTML = '';
-            
-            if (paginatedReports.length === 0) {
-                reportElements.reportsList.innerHTML = `
-                    <div class="text-center py-8 text-gray-400">
-                        <i class="fas fa-inbox text-4xl mb-3"></i>
-                        <p>Нет отчётов</p>
-                    </div>
-                `;
+            if (!name || !email || !password || !confirmPassword) {
+                alert('Пожалуйста, заполните все поля');
                 return;
             }
             
-            paginatedReports.forEach(report => {
-                const date = new Date(report.date);
-                const formattedDate = date.toLocaleDateString('ru-RU', {
-                    day: 'numeric',
-                    month: 'long',
-                    year: 'numeric'
-                });
-                
-                // Определяем классы и иконки для типа оплаты
-                const paymentMethodClass = report.paymentMethod === 'cash' ? 
-                    'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800';
-                
-                const paymentMethodIcon = report.paymentMethod === 'cash' ? 
-                    'fa-money-bill-wave' : 'fa-file-invoice';
-                
-                // Определяем классы и иконки для статуса
-                let statusClass, statusIcon, statusText;
-                
-                switch(report.status) {
-                    case 'not_ordered':
-                        statusClass = 'bg-gray-100 text-gray-800';
-                        statusIcon = 'fa-times-circle';
-                        statusText = 'Не заказано';
-                        break;
-                    case 'ordered':
-                        statusClass = 'bg-yellow-100 text-yellow-800';
-                        statusIcon = 'fa-shopping-cart';
-                        statusText = 'Заказано';
-                        break;
-                    case 'paid':
-                        statusClass = 'bg-green-100 text-green-800';
-                        statusIcon = 'fa-check-circle';
-                        statusText = 'Оплачено';
-                        break;
-                    default:
-                        statusClass = 'bg-gray-100 text-gray-800';
-                        statusIcon = 'fa-question-circle';
-                        statusText = 'Неизвестно';
-                }
-                
-                // Метка для собственных средств
-                const selfPaidBadge = report.selfPaid ? `
-                    <span class="px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded-full mr-2">
-                        <i class="fas fa-user mr-1"></i> Свои
-                    </span>
-                ` : '';
-                
-                // Метка для средств запаса
-                const reserveBadge = report.usedReserve ? `
-                    <span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
-                        <i class="fas fa-piggy-bank mr-1"></i> Запас
-                    </span>
-                ` : '';
-                
-                // Превью файла
-                const filePreview = report.fileName ? `
-                    <button class="text-blue-500 hover:text-blue-700 text-sm flex items-center view-document-btn" 
-                            data-file-name="${report.fileName}" data-file-type="${report.fileType}" data-file-data="${report.fileData || ''}">
-                        <i class="fas fa-paperclip mr-1"></i> ${report.fileName}
-                    </button>
-                ` : '';
-                
-                const reportElement = document.createElement('div');
-                reportElement.className = 'report-item bg-gray-50 p-4 rounded-lg border border-gray-200 slide-in';
-                reportElement.innerHTML = `
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <div class="font-bold text-lg text-blue-600">${report.amount.toLocaleString('ru-RU')} ₽</div>
-                            <div class="text-sm text-gray-500 mb-1">${formattedDate}</div>
-                            <div class="text-sm text-gray-700 mb-2">${report.comment || 'Без комментария'}</div>
-                            <div class="flex flex-wrap items-center gap-1">
-                                <span class="px-2 py-1 ${paymentMethodClass} text-xs rounded-full">
-                                    <i class="fas ${paymentMethodIcon} mr-1"></i> ${report.paymentMethod === 'cash' ? 'Нал' : 'Счёт'}
-                                </span>
-                                <span class="status-badge px-2 py-1 ${statusClass} text-xs rounded-full" data-id="${report.id}">
-                                    <i class="fas ${statusIcon} mr-1"></i> ${statusText}
-                                </span>
-                                ${selfPaidBadge}
-                                ${reserveBadge}
-                                ${filePreview}
-                            </div>
-                        </div>
-                        <div class="flex space-x-2">
-                            <button class="edit-report-btn text-gray-400 hover:text-blue-500" data-id="${report.id}">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button class="delete-report-btn text-gray-400 hover:text-red-500" data-id="${report.id}">
-                                <i class="fas fa-trash-alt"></i>
-                            </button>
-                        </div>
-                    </div>
-                `;
-                
-                reportElements.reportsList.appendChild(reportElement);
-            });
-            
-            // Добавляем обработчики для кнопок просмотра документа
-            document.querySelectorAll('.view-document-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const fileName = this.dataset.fileName;
-                    const fileType = this.dataset.fileType;
-                    const fileData = this.dataset.fileData;
-                    
-                    reportElements.documentModalTitle.textContent = fileName;
-                    
-                    if (fileType.match('image.*') && fileData) {
-                        reportElements.documentModalImage.src = fileData;
-                        reportElements.documentModalImage.classList.remove('hidden');
-                    } else {
-                        reportElements.documentModalImage.src = '';
-                        reportElements.documentModalImage.classList.add('hidden');
-                    }
-                    
-                    reportElements.documentModal.classList.remove('hidden');
-                });
-            });
-            
-            // Добавляем обработчики для кнопок редактирования
-            document.querySelectorAll('.edit-report-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const reportId = parseInt(this.dataset.id);
-                    openEditModal(reportId);
-                });
-            });
-            
-            // Добавляем обработчики для кнопок удаления
-            document.querySelectorAll('.delete-report-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const reportId = parseInt(this.dataset.id);
-                    deleteReport(reportId);
-                });
-            });
-            
-            // Добавляем обработчики для кнопок изменения статуса
-            document.querySelectorAll('.status-badge').forEach(badge => {
-                badge.addEventListener('click', function() {
-                    const reportId = parseInt(this.dataset.id);
-                    toggleReportStatus(reportId);
-                });
-            });
-        }
-        
-        // Обновление пагинации
-        function updatePagination() {
-            const filteredReports = getFilteredReports();
-            const totalPages = Math.ceil(filteredReports.length / reportState.itemsPerPage);
-            
-            // Обновляем информацию о странице
-            reportElements.pageInfo.textContent = `Страница ${reportState.currentPage} из ${totalPages || 1}`;
-            
-            // Обновляем состояние кнопки
-            reportElements.prevPageBtn.disabled = reportState.currentPage <= 1;
-            reportElements.nextPageBtn.disabled = reportState.currentPage >= totalPages;
-            
-            // Если нет отчетов, скрываем пагинацию
-            if (filteredReports.length === 0) {
-                reportElements.prevPageBtn.style.display = 'none';
-                reportElements.nextPageBtn.style.display = 'none';
-                reportElements.pageInfo.style.display = 'none';
-            } else {
-                reportElements.prevPageBtn.style.display = 'block';
-                reportElements.nextPageBtn.style.display = 'block';
-                reportElements.pageInfo.style.display = 'block';
-            }
-        }
-        
-        // Переключение статуса отчета
-        function toggleReportStatus(reportId) {
-            const reportIndex = reportState.reports.findIndex(r => r.id === reportId);
-            if (reportIndex !== -1) {
-                let newStatus;
-                const currentStatus = reportState.reports[reportIndex].status;
-                
-                // Циклическое переключение статусов: not_ordered -> ordered -> paid -> not_ordered
-                switch(currentStatus) {
-                    case 'not_ordered':
-                        newStatus = 'ordered';
-                        break;
-                    case 'ordered':
-                        newStatus = 'paid';
-                        break;
-                    case 'paid':
-                        newStatus = 'not_ordered';
-                        break;
-                    default:
-                        newStatus = 'not_ordered';
-                }
-                
-                reportState.reports[reportIndex].status = newStatus;
-                saveReportsToStorage();
-                renderReports();
-                updateStatistics();
-                
-                // Определяем текст статуса для уведомления
-                let statusText;
-                switch(newStatus) {
-                    case 'not_ordered':
-                        statusText = 'Не заказано';
-                        break;
-                    case 'ordered':
-                        statusText = 'Заказано';
-                        break;
-                    case 'paid':
-                        statusText = 'Оплачено';
-                        break;
-                    default:
-                        statusText = 'Неизвестно';
-                }
-                
-                showNotification(`Статус изменён на "${statusText}"`, 'success');
-            }
-        }
-        
-        // Открытие модального окна редактирования
-        function openEditModal(reportId) {
-            const report = reportState.reports.find(r => r.id === reportId);
-            if (!report) return;
-            
-            // Заполняем форму данными отчёта
-            reportElements.editId.value = report.id;
-            reportElements.editAmount.value = report.amount;
-            reportElements.editDate.value = report.date;
-            reportElements.editComment.value = report.comment || '';
-            reportElements.editSelfPaidInput.checked = report.selfPaid || false;
-            reportElements.editUseReserveCheckbox.checked = report.usedReserve || false;
-            
-            // Устанавливаем активную кнопку метода оплаты
-            reportElements.editPaymentMethodBtns.forEach(btn => {
-                btn.classList.remove('active');
-                if (btn.dataset.method === report.paymentMethod) {
-                    btn.classList.add('active');
-                    reportElements.editPaymentMethodInput.value = report.paymentMethod;
-                }
-            });
-            
-            // Показываем превью файла, если он есть
-            if (report.fileName) {
-                reportElements.editFileName.textContent = report.fileName;
-                reportElements.editFileSize.textContent = report.fileSize;
-                reportElements.editFilePreview.classList.remove('hidden');
-                
-                if (report.fileType.match('image.*') && report.fileData) {
-                    reportElements.editFilePreviewImage.src = report.fileData;
-                    reportElements.editFilePreviewImage.classList.remove('hidden');
-                } else {
-                    reportElements.editFilePreviewImage.classList.add('hidden');
-                }
-            } else {
-                reportElements.editFilePreview.classList.add('hidden');
-                reportElements.editFilePreviewImage.classList.add('hidden');
+            if (password !== confirmPassword) {
+                alert('Пароли не совпадают');
+                return;
             }
             
-            // Открываем модальное окно
-            reportElements.editModal.classList.remove('hidden');
-        }
-        
-        // Удаление отчета
-        function deleteReport(id) {
-            if (confirm('Вы уверены, что хотите удалить этот отчёт?')) {
-                const reportIndex = reportState.reports.findIndex(r => r.id === id);
-                const report = reportState.reports[reportIndex];
-                
-                // Возвращаем средства запаса, если отчет был ими оплачен
-                if (report.usedReserve) {
-                    const returnOperation = {
-                        type: 'add',
-                        amount: report.amount,
-                        date: new Date().toISOString().split('T')[0],
-                        comment: `Возврат средств за отчёт #${report.id}`,
-                        reportId: report.id
-                    };
-                    
-                    reportState.reserveOperations.push(returnOperation);
-                    reportState.reserveAmount += report.amount;
-                    
-                    // Показываем уведомление
-                    showNotification(`Возвращено ${report.amount} ₽ в средства запаса`, 'success');
-                    
-                    // Обновляем отображение резерва
-                    updateReserveDisplay();
-                }
-                
-                reportState.reports = reportState.reports.filter(r => r.id !== id);
-                saveReportsToStorage();
-                renderReports();
-                updateStatistics();
-                updatePagination();
-                showNotification('Отчёт удалён', 'error');
+            if (password.length < 6) {
+                alert('Пароль должен содержать минимум 6 символов');
+                return;
             }
-        }
+            
+            if (!agreeTerms) {
+                alert('Необходимо согласиться с условиями использования');
+                return;
+            }
+            
+            // Демо: показываем профиль
+            document.getElementById('register-form').classList.add('hidden'); 
+            document.getElementById('profile-view').classList.remove('hidden');
+            
+            // Устанавливаем данные нового пользователя
+            document.getElementById('profile-name').textContent = name;
+            document.getElementById('profile-email').textContent = email;
+        });
         
-        // Обновление статистики
-        function updateStatistics() {
-            const now = new Date();
-            const currentMonth = now.getMonth();
-            const currentYear = now.getFullYear();
-            
-            // Общая сумма
-            const totalAmount = reportState.reports.reduce((sum, report) => sum + report.amount, 0);
-            
-            // Сумма за текущий месяц
-            const monthlyAmount = reportState.reports
-                .filter(report => {
-                    const reportDate = new Date(report.date);
-                    return reportDate.getMonth() === currentMonth && reportDate.getFullYear() === currentYear;
-                })
-                .reduce((sum, report) => sum + report.amount, 0);
-            
-            // Сумма, оплаченная своими средствами
-            const selfPaidAmount = reportState.reports
-                .filter(r => r.selfPaid)
-                .reduce((sum, report) => sum + report.amount, 0);
-            
-            // Сумма, оплаченная своими средствами и не возвращённая (статус не "Оплачено")
-            const unpaidSelfAmount = reportState.reports
-                .filter(r => r.selfPaid && r.status !== 'paid')
-                .reduce((sum, report) => sum + report.amount, 0);
-            
-            // Сумма по наличным
-            const cashAmount = reportState.reports
-                .filter(r => r.paymentMethod === 'cash')
-                .reduce((sum, report) => sum + report.amount, 0);
-            
-            // Сумма по счетам
-            const invoiceAmount = reportState.reports
-                .filter(r => r.paymentMethod === 'invoice')
-                .reduce((sum, report) => sum + report.amount, 0);
-            
-            // Проценты для форм оплаты
-            const cashPercent = totalAmount > 0 ? Math.round((cashAmount / totalAmount) * 100) : 0;
-            const invoicePercent = totalAmount > 0 ? Math.round((invoiceAmount / totalAmount) * 100) : 0;
-            
-            // Обновляем общие суммы
-            reportElements.totalAmount.textContent = `${totalAmount.toLocaleString('ru-RU')} ₽`;
-            reportElements.monthlyAmount.textContent = `${monthlyAmount.toLocaleString('ru-RU')} ₽`;
-            reportElements.selfPaidAmount.textContent = `${selfPaidAmount.toLocaleString('ru-RU')} ₽`;
-            reportElements.unpaidSelfAmount.textContent = `${unpaidSelfAmount.toLocaleString('ru-RU')} ₽`;
-            
-            // Обновляем проценты форм оплаты
-            reportElements.cashPercent.textContent = `${cashPercent}%`;
-            reportElements.invoicePercent.textContent = `${invoicePercent}%`;
-            
-            // Обновляем график форм оплаты
-            reportElements.paymentMethodChart.style.width = '100%';
-            reportElements.paymentMethodChart.style.background = 
-                `linear-gradient(to right, #3b82f6 ${cashPercent}%, #10b981 ${cashPercent}%)`;
-            
-            // Обновляем график по месяцам
-            updateMonthlyChart();
-        }
+        // Обработка входа через Telegram
+        document.querySelector('.telegram-btn').addEventListener('click', (e) => {
+            e.preventDefault();
+            alert('Реализация входа через Telegram\nВ реальной системе здесь должно быть перенаправление на OAuth Telegram');
+        });
         
-        // Обновление графика по месяцам
-        function updateMonthlyChart() {
-    const monthlyData = {};
-    const now = new Date();
-    const currentYear = now.getFullYear();
+        // Обработка входа через Яндекс
+        document.querySelector('.yandex-btn').addEventListener('click', (e) => {
+            e.preventDefault();
+            alert('Реализация входа через Яндекс\nВ реальной системе здесь должно быть перенаправление на OAuth Яндекс');
+        });
 
-    // Инициализируем данные за последние 6 месяцев
-    for (let i = 5; i >= 0; i--) {
-        const date = new Date(currentYear, now.getMonth() - i, 1);
-        const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-        const monthName = date.toLocaleDateString('ru-RU', { month: 'short' });
-        monthlyData[monthKey] = {
-            monthName,
-            total: 0
-        };
-    }
-
-    // Заполняем данными из отчетов
-    reportState.reports.forEach(report => {
-        const reportDate = new Date(report.date);
-        const monthKey = `${reportDate.getFullYear()}-${String(reportDate.getMonth() + 1).padStart(2, '0')}`;
-        if (monthlyData[monthKey]) {
-            monthlyData[monthKey].total += report.amount;
-        }
-    });
-
-    // Находим максимальное значение суммы
-    const values = Object.values(monthlyData).map(m => m.total);
-    const maxAmount = Math.max(...values, 1); // min 1 чтобы избежать деления на 0
-
-    // Очищаем контейнер
-    reportElements.monthlyChart.innerHTML = '';
-    reportElements.monthlyChart.style.display = 'flex';
-    reportElements.monthlyChart.style.gap = '1rem';
-
-    // Создаем столбцы
-    Object.entries(monthlyData).forEach(([key, data]) => {
-        const heightPercent = (data.total / maxAmount) * 100;
-
-        const columnWrapper = document.createElement('div');
-        columnWrapper.className = 'flex flex-col items-center justify-end w-full h-40 space-y-1';
-
-        const bar = document.createElement('div');
-        bar.className = 'w-full bg-blue-500 rounded-t transition-all duration-500 ease-in-out';
-        bar.style.height = `${heightPercent}%`;
-        bar.style.minHeight = heightPercent > 0 ? '4px' : '0'; // минимальная высота
-        bar.title = `${data.total} ₽`;
-
-        const label = document.createElement('div');
-        label.className = 'text-xs text-gray-500 text-center mt-1';
-        label.textContent = data.monthName;
-
-        const valueLabel = document.createElement('div');
-        valueLabel.className = 'text-xs text-gray-700 font-medium text-center';
-        valueLabel.textContent = `${data.total.toLocaleString('ru-RU')} ₽`;
-
-        columnWrapper.appendChild(bar);
-        columnWrapper.appendChild(label);
-        columnWrapper.appendChild(valueLabel);
-
-        reportElements.monthlyChart.appendChild(columnWrapper);
-    });
-}
-        
-        // Форматирование размера файла
-        function formatFileSize(bytes) {
-            if (!bytes) return '0 Bytes';
-            if (bytes === 0) return '0 Bytes';
-            const k = 1024;
-            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-            const i = Math.floor(Math.log(bytes) / Math.log(k));
-            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-        }
-        
-        // Показать уведомление
-        function showNotification(message, type) {
-            const notification = document.createElement('div');
-            notification.className = `fixed top-4 right-4 px-4 py-2 rounded-lg shadow-lg text-white ${
-                type === 'success' ? 'bg-green-500' : 'bg-red-500'
-            } animate-bounce`;
-            notification.innerHTML = `
-                <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'} mr-2"></i>
-                ${message}
-            `;
-            document.body.appendChild(notification);
+        // Функционал аватара
+        document.getElementById('avatar-upload').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
             
-            setTimeout(() => {
-                notification.classList.remove('animate-bounce');
-                notification.classList.add('opacity-0', 'transition-opacity', 'duration-500');
-                setTimeout(() => notification.remove(), 500);
-            }, 3000);
-        }
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const img = document.getElementById('profile-avatar');
+                img.src = event.target.result;
+                img.classList.remove('hidden');
+                document.getElementById('default-avatar-icon').classList.add('hidden');
+            };
+            reader.readAsDataURL(file);
+        });
         
-        // Инициализация при загрузке страницы
-        document.addEventListener('DOMContentLoaded', initReports);
+        // Функционал редактирования имени
+        const nameView = document.getElementById('name-view');
+        const nameEdit = document.getElementById('name-edit');
+        const nameInput = document.getElementById('profile-name-input');
+        const profileName = document.getElementById('profile-name');
+        
+        document.getElementById('edit-name-btn').addEventListener('click', () => {
+            nameView.classList.add('hidden');
+            nameEdit.classList.remove('hidden');
+            nameInput.value = profileName.textContent;
+            nameInput.focus();
+        });
+        
+        document.getElementById('save-name-btn').addEventListener('click', () => {
+            const newName = nameInput.value.trim();
+            if (newName) {
+                profileName.textContent = newName;
+                nameView.classList.remove('hidden');
+                nameEdit.classList.add('hidden');
+            }
+        });
+        
+        // Обработка выхода
+        document.getElementById('logout-button').addEventListener('click', () => {
+            document.getElementById('profile-view').classList.add('hidden');
+            document.querySelector('.auth-container').classList.remove('pt-8'); // Remove padding compensation
+            document.querySelector('.flex.rounded-lg.p-1.bg-gray-100.mb-6').classList.remove('hidden'); // Show toggle
+            document.getElementById('login-form').classList.remove('hidden');
+            document.getElementById('login-toggle').click();
+            
+            // Сбрасываем аватар и имя
+            document.getElementById('profile-avatar').src = '';
+            document.getElementById('profile-avatar').classList.add('hidden');
+            document.getElementById('default-avatar-icon').classList.remove('hidden');
+            
+            // Очищаем поля
+            document.getElementById('login-email').value = '';
+            document.getElementById('login-password').value = '';
+            document.getElementById('register-name').value = '';
+            document.getElementById('register-email').value = '';
+            document.getElementById('register-password').value = '';
+            document.getElementById('register-confirm-password').value = '';
+            document.getElementById('agree-terms').checked = false;
+        });
     </script>
 </body>
 </html>
