@@ -1,40 +1,39 @@
 const express = require('express');
 const cors = require('cors');
-const { Pool } = require('pg');
-const TelegramLogin = require('telegram-login-node');
+const dotenv = require('dotenv');
+const pool = require('./db');
+const checkTelegramAuth = require('./verifyTelegram');
+
+dotenv.config();
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false },
+app.get('/auth/telegram', async (req, res) => {
+  const data = req.query;
+
+  if (!checkTelegramAuth(data)) {
+    return res.status(403).send('Неверная авторизация');
+  }
+
+  const { id, first_name, last_name, username, photo_url } = data;
+
+  try {
+    await pool.query(
+      \`INSERT INTO users (id, first_name, last_name, username, photo_url)
+       VALUES ($1, $2, $3, $4, $5)
+       ON CONFLICT (id) DO NOTHING\`,
+      [id, first_name, last_name, username, photo_url]
+    );
+
+    res.send(\`<h2>Добро пожаловать, \${first_name}!</h2><p>Вы успешно вошли через Telegram.</p>\`);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Ошибка сервера');
+  }
 });
 
-function validateTelegramAuth(req, res, next) {
-  const { hash, ...authData } = req.body;
-  const checker = new TelegramLogin(process.env.TELEGRAM_BOT_TOKEN);
-  const isValid = checker.checkAuth({ hash, ...authData });
-  if (!isValid) return res.status(401).send('Invalid Telegram login');
-  next();
-}
-
-app.post('/api/report', validateTelegramAuth, async (req, res) => {
-  const { amount, date, method, comment, id: tg_id } = req.body;
-  await pool.query(
-    'INSERT INTO reports (amount, date, method, comment, tg_id) VALUES ($1, $2, $3, $4, $5)',
-    [amount, date, method, comment, tg_id]
-  );
-  res.send({ status: 'ok' });
-});
-
-app.get('/api/reports', async (req, res) => {
-  const { tg_id } = req.query;
-  const result = await pool.query('SELECT * FROM reports WHERE tg_id = $1', [tg_id]);
-  res.send(result.rows);
-});
-
-app.listen(process.env.PORT || 3001, () => {
-  console.log('Server started');
-});
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(\`Сервер работает на порту \${PORT}\`));
